@@ -5,6 +5,7 @@ import itertools
 
 jets = "AntiKt4EMTopoJets"
 workingPoint = "Medium" # Loose, Medium, Tight
+systematicName = "Nominal" # All, Nominal, JvtEfficiencyDown, JvtEfficiencyUp
 
 ''' Set up all the algorithms '''
 c.setalg("BasicEventSelection", {"m_name": "BasicEventSelection",
@@ -33,4 +34,5 @@ c.setalg("JetSelector", {"m_name": "Select{0:s}".format(jets),
 c.setalg("JVTCalibrationTester", {"m_name": "TestJVTCalibrations",
                                   "m_inContainerName": selectedJets,
                                   "m_workingPoint": workingPoint,
+                                  "m_systName": systematicName,
                                   "m_debug": True})
