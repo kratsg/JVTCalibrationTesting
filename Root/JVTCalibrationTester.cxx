@@ -49,7 +49,7 @@ EL::StatusCode JVTCalibrationTester :: initialize ()
   m_store = wk()->xaodStore();
 
   // set up the JetJvtEfficiency tool
-  Info("initialize()", "Attempting to configure tool with:\n\tWorkingPoint\t%s\n\tSFFile\t\t\t%s", m_workingPoint.c_str(), m_sfFile.c_str());
+  Info("initialize()", "Attempting to configure tool with:\n\tWorkingPoint\t%s\n\tSFFile\t\t%s", m_workingPoint.c_str(), m_sfFile.c_str());
   RETURN_CHECK("JVTCalibrationTester::initialize()", m_JetJvtEfficiency->setProperty("WorkingPoint",m_workingPoint), "Could not set WorkingPoint.");
   RETURN_CHECK("JVTCalibrationTester:initialize()", m_JetJvtEfficiency->setProperty("SFFile",m_sfFile), "Could not set SFFile.");
   RETURN_CHECK("JVTCalibrationTester:initialize()", m_JetJvtEfficiency->initialize(), "Could not initialize the JetJvtEfficiency tool.");
