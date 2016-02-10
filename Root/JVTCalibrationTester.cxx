@@ -59,6 +59,9 @@ EL::StatusCode JVTCalibrationTester :: initialize ()
 
 EL::StatusCode JVTCalibrationTester :: execute ()
 {
+  m_event_totalJets = 0;
+  m_event_totalJetsPassed = 0;
+
   // retrieve input jets
   const xAOD::JetContainer* jets(nullptr);
   RETURN_CHECK("JVTCalibrationTester::execute()", HelperFunctions::retrieve(jets, m_inContainerName, m_event, m_store, m_verbose) ,"Could not retrieve input jet collection.");
@@ -69,20 +72,34 @@ EL::StatusCode JVTCalibrationTester :: execute ()
   // select jets that pass JVT first
   ConstDataVector<xAOD::JetContainer> selected_jets = ConstDataVector<xAOD::JetContainer>(SG::VIEW_ELEMENTS);
   for(const auto& jet: *jets){
+    // count total number of jets we look at
+    m_event_totalJets++;
+    m_totalJets++;
+    // figure out if we pass or not
     bool pass = passJVT(*jet, *m_JetJvtEfficiency);
-    if(m_debug) Info("execute()", "%s: Jet with pT %0.2f GeV, eta %0.2f", pass?"PASS":"FAIL", jet->pt()/1e3, std::fabs(jet->eta()));
+    if(m_debug) Info("execute()", "\t%s: Jet with pT %0.4f GeV, eta %0.4f", pass?"PASS":"FAIL", jet->pt()/1e3, std::fabs(jet->eta()));
     if(pass) selected_jets.push_back(jet);
   }
 
   // compute SF for jets that passed JVT
   for(const auto& jet: selected_jets){
+    // count total number of jets that pass JVT
+    m_event_totalJetsPassed++;
+    m_totalJetsPassed++;
+    // get the scale factor and report it
     float scaleFactor(-999.);
     m_JetJvtEfficiency->getEfficiencyScaleFactor(*jet,scaleFactor);
-    if(m_debug) Info("execute()", "Jet with pT %0.2f GeV has scale factor %0.2f", jet->pt()/1e3, scaleFactor);
+    if(m_debug) Info("execute()", "\tJet with pT %0.4f GeV has scale factor %0.4f", jet->pt()/1e3, scaleFactor);
   }
   return EL::StatusCode::SUCCESS;
 }
 
-EL::StatusCode JVTCalibrationTester :: postExecute () { return EL::StatusCode::SUCCESS; }
-EL::StatusCode JVTCalibrationTester :: finalize () { return EL::StatusCode::SUCCESS; }
+EL::StatusCode JVTCalibrationTester :: postExecute () {
+  if(m_verbose) Info("execute()", "Efficiency of JVT: %0.4f (per-event)", m_event_totalJetsPassed/m_event_totalJets);
+  return EL::StatusCode::SUCCESS;
+}
+EL::StatusCode JVTCalibrationTester :: finalize () {
+  if(m_debug) Info("execute()", "Efficiency of JVT: %0.4f (total)", m_totalJetsPassed/m_totalJets);
+  return EL::StatusCode::SUCCESS;
+}
 EL::StatusCode JVTCalibrationTester :: histFinalize () { return EL::StatusCode::SUCCESS; }
