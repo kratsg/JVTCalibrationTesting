@@ -11,13 +11,17 @@
 
 // EDM includes
 #include "xAODJet/JetContainer.h"
+#include "xAODAnaHelpers/HelperFunctions.h"
 
 // this is needed to distribute the algorithm to the workers
 ClassImp(JVTCalibrationTester)
 
 
 
-JVTCalibrationTester :: JVTCalibrationTester (std::string className) : Algorithm(className) { }
+JVTCalibrationTester :: JVTCalibrationTester (std::string className) :
+  Algorithm(className),
+  m_JetJvtEfficiency(CxxUtils::make_unique<CP::JetJvtEfficiency>("JetJvtEfficiency"))
+{ }
 
 EL::StatusCode JVTCalibrationTester :: setupJob (EL::Job& job)
 {
@@ -45,11 +49,6 @@ EL::StatusCode JVTCalibrationTester :: initialize ()
   m_store = wk()->xaodStore();
 
   // set up the JetJvtEfficiency tool
-  if ( asg::ToolStore::contains<CP::JetJvtEfficiency>("JetJvtEfficiency") ) {
-    m_JetJvtEfficiency = asg::ToolStore::get<CP::JetJvtEfficiency>("JetJvtEfficiency");
-  } else {
-    m_JetJvtEfficiency = CxxUtils::make_unique<CP::JetJvtEfficiency>("JetJvtEfficiency");
-  }
   Info("initialize()", "Attempting to configure tool with:\n\tWorkingPoint\t%s\n\tSFFile\t\t\t%s", m_workingPoint.c_str(), m_sfFile.c_str());
   RETURN_CHECK("JVTCalibrationTester::initialize()", m_JetJvtEfficiency->setProperty("WorkingPoint",m_workingPoint), "Could not set WorkingPoint.");
   RETURN_CHECK("JVTCalibrationTester:initialize()", m_JetJvtEfficiency->setProperty("SFFile",m_sfFile), "Could not set SFFile.");
@@ -65,12 +64,12 @@ EL::StatusCode JVTCalibrationTester :: execute ()
   RETURN_CHECK("JVTCalibrationTester::execute()", HelperFunctions::retrieve(jets, m_inContainerName, m_event, m_store, m_verbose) ,"Could not retrieve input jet collection.");
 
   // define how we pass JVT
-  auto passJVT = [m_JetJvtEfficiency](const xAOD::Jet* jet) -> bool { return (jet->pt()>60e3 || std::fabs(jet->eta())>2.4 || m_JetJvtEfficiency->passesJvtCut(*jet)); };
+  auto passJVT = [](const xAOD::Jet& jet, CP::JetJvtEfficiency& jvt_tool) -> bool { return (jet.pt()>60e3 || std::fabs(jet.eta())>2.4 || jvt_tool.passesJvtCut(jet)); };
 
   // select jets that pass JVT first
   ConstDataVector<xAOD::JetContainer> selected_jets = ConstDataVector<xAOD::JetContainer>(SG::VIEW_ELEMENTS);
   for(const auto& jet: *jets){
-    bool pass = passJVT(jet);
+    bool pass = passJVT(*jet, *m_JetJvtEfficiency);
     if(m_debug) Info("execute()", "%s: Jet with pT %0.2f GeV, eta %0.2f", pass?"PASS":"FAIL", jet->pt()/1e3, std::fabs(jet->eta()));
     if(pass) selected_jets.push_back(jet);
   }
@@ -79,7 +78,7 @@ EL::StatusCode JVTCalibrationTester :: execute ()
   for(const auto& jet: selected_jets){
     float scaleFactor(-999.);
     m_JetJvtEfficiency->getEfficiencyScaleFactor(*jet,scaleFactor);
-    if(m_debug) Info("execute()", "Jet with pT %0.2f GeV has scale factor %0.2f", jet->pt()/1e3, sf);
+    if(m_debug) Info("execute()", "Jet with pT %0.2f GeV has scale factor %0.2f", jet->pt()/1e3, scaleFactor);
   }
   return EL::StatusCode::SUCCESS;
 }

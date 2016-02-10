@@ -6,10 +6,8 @@
 // unique pointers
 #include <memory>
 
-// forward-declare
-namespace CP {
-  class JetJvtCalibration;
-}
+// EDM includes
+#include "JetJvtEfficiency/JetJvtEfficiency.h"
 
 class JVTCalibrationTester : public xAH::Algorithm
 {
@@ -22,9 +20,9 @@ public:
   std::string m_inContainerName = "AntiKt4EMTopoJets";
 
 private:
-  /** pointer to the JetJvtCalibration tool instance **/
-  // note: should be called CP::JetJvtCalibrationTool instead
-  std::unique_ptr<CP::JetJvtCalibration> m_JetJvtEfficiency; //!
+  /** pointer to the JetJvtEfficiency tool instance **/
+  // note: should be called CP::JetJvtEfficiencyTool instead
+  std::unique_ptr<CP::JetJvtEfficiency> m_JetJvtEfficiency; //!
 
 public:
   // this is a standard constructor
