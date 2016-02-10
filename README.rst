@@ -18,7 +18,7 @@ To install, you will need various dependencies and RootCore::
   git clone https://github.com/UCATLAS/xAODAnaHelpers
   git clone https://github.com/kratsg/JVTCalibrationTesting
   cd xAODAnaHelpers && git checkout 7d8d9f && cd -
-  rc checkout_pkg atlasoff/Reconstruction/Jet/JetJvtEfficiency
+  rc checkout_pkg atlasoff/Reconstruction/Jet/JetJvtEfficiency/trunk
   rc find_packages
   rc compile
 
