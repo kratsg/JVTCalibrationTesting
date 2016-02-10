@@ -28,6 +28,8 @@ private:
   std::map<std::string, double> m_totalJets; //!
   /** number of jets that pass JVT for a given systematic **/
   std::map<std::string, double> m_totalJetsPassed; //!
+  /** sum of the SFs **/
+  std::map< std::string, double> m_totalSF; //!
 
   /** list of systematics to use **/
   std::vector<CP::SystematicSet> m_systList; //!

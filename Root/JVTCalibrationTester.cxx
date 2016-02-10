@@ -95,8 +95,9 @@ EL::StatusCode JVTCalibrationTester :: execute ()
       // count total number of jets that pass JVT
       m_totalJetsPassed[syst_it.name()]++;
       // get the scale factor and report it
-      float scaleFactor(-999.);
+      float scaleFactor(0.);
       m_JetJvtEfficiency->getEfficiencyScaleFactor(*jet,scaleFactor);
+      m_totalSF[syst_it.name()] += scaleFactor;
       if(m_debug) Info("execute()", "\t\t\tJet with pT %0.4f GeV has scale factor %0.4f", jet->pt()/1e3, scaleFactor);
     }
 
@@ -107,7 +108,7 @@ EL::StatusCode JVTCalibrationTester :: execute ()
 EL::StatusCode JVTCalibrationTester :: postExecute () { return EL::StatusCode::SUCCESS; }
 EL::StatusCode JVTCalibrationTester :: finalize () {
   for(const auto& syst_it : m_systList )
-    if(m_debug) Info("execute()", "Efficiency of JVT: %0.4f (total, %s)", m_totalJetsPassed[syst_it.name()]/m_totalJets[syst_it.name()], syst_it.name().empty()?"nominal":syst_it.name().c_str());
+    if(m_debug) Info("execute()", "Efficiency of JVT: %0.4f (SF: %0.4f, %s)", m_totalJetsPassed[syst_it.name()]/m_totalJets[syst_it.name()], m_totalSF[syst_it.name()], syst_it.name().empty()?"nominal":syst_it.name().c_str());
   return EL::StatusCode::SUCCESS;
 }
 EL::StatusCode JVTCalibrationTester :: histFinalize () { return EL::StatusCode::SUCCESS; }
