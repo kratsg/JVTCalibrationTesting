@@ -59,6 +59,7 @@ EL::StatusCode JVTCalibrationTester :: initialize ()
 
 EL::StatusCode JVTCalibrationTester :: execute ()
 {
+  if(m_debug) Info("execute()", "Looking at an event...");
   m_event_totalJets = 0;
   m_event_totalJetsPassed = 0;
 
@@ -95,7 +96,7 @@ EL::StatusCode JVTCalibrationTester :: execute ()
 }
 
 EL::StatusCode JVTCalibrationTester :: postExecute () {
-  if(m_verbose) Info("execute()", "Efficiency of JVT: %0.4f (per-event)", m_event_totalJetsPassed/m_event_totalJets);
+  if(m_debug) Info("execute()", "\tEfficiency of JVT: %0.4f (per-event)", m_event_totalJetsPassed/m_event_totalJets);
   return EL::StatusCode::SUCCESS;
 }
 EL::StatusCode JVTCalibrationTester :: finalize () {
