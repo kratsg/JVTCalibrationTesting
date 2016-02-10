@@ -29,7 +29,7 @@ It is very simple to run this as we use ``xAH_run.py`` to manage that for us. Fo
 
   xAH_run.py --files /share/t3data3/kratsg/xAODs/mc15_13TeV.410000.PowhegPythiaEvtGen_P2012_ttbar_hdamp172p5_nonallhad.merge.AOD.e3698_s2608_s2183_r6630_r6264_tid05419191_00/AOD.05419191._000003.pool.root.1 --config JVTCalibrationTesting/data/config.py --nevents 10 -f direct
 
-which will run locally (``direct``) over 10 events with the configuration `config.py <JVTCalibrationTesting/data/config.py>`_.
+which will run locally (``direct``) over 10 events with the configuration `config.py <data/config.py>`_.
 
 Contributors
 ============
