@@ -27,6 +27,7 @@ c.setalg("JetSelector", {"m_name": "Select{0:s}".format(jets),
                          "m_decorateSelectedObjects": False,
                          "m_createSelectedContainer": True,
                          "m_cleanJets": False,
+                         "m_pT_min": 20.e3,
                          "m_pT_max": 60.e3})
 
 c.setalg("JVTCalibrationTester", {"m_name": "TestJVTCalibrations",
