@@ -24,15 +24,15 @@ private:
   // note: should be called CP::JetJvtEfficiencyTool instead
   std::unique_ptr<CP::JetJvtEfficiency> m_JetJvtEfficiency; //!
 
-  /** number of jets processed in current event **/
-  double m_event_totalJets = 0; //!
-  /** number of jets that pass JVT in current event **/
-  double m_event_totalJetsPassed = 0; //!
+  /** number of jets processed for a given systematic **/
+  std::map<std::string, double> m_totalJets; //!
+  /** number of jets that pass JVT for a given systematic **/
+  std::map<std::string, double> m_totalJetsPassed; //!
 
-  /** number of jets processed **/
-  double m_totalJets = 0; //!
-  /** number of jets that pass JVT **/
-  double m_totalJetsPassed = 0; //!
+  /** list of systematics to use **/
+  std::vector<CP::SystematicSet> m_systList; //!
+  /** systematic types??? **/
+  std::vector<int> m_systType; //!
 
 public:
   // this is a standard constructor
