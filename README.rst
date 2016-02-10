@@ -7,7 +7,7 @@ Testing:
 - documentation
 - that it compiles
 
-See `the JVT twiki <https://twiki.cern.ch/twiki/bin/view/AtlasProtected/JVTCalibration>`_ for more information.
+See `the JVT twiki <https://twiki.cern.ch/twiki/bin/view/AtlasProtected/JVTCalibration>`_ for more information and `the talk <https://indico.cern.ch/event/478075/contribution/4/attachments/1225639/1794061/ungaro_160209_JVT.pdf>`_ for more details.
 
 Installing
 ----------
