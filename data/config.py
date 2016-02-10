@@ -1,11 +1,9 @@
 from xAH_config import xAH_config
 c = xAH_config()
 
-import itertools
-
 jets = "AntiKt4EMTopoJets"
 workingPoint = "Medium" # Loose, Medium, Tight
-systematicName = "Nominal" # All, Nominal, JvtEfficiencyDown, JvtEfficiencyUp
+systematicName = "All" # All, Nominal, JvtEfficiencyDown, JvtEfficiencyUp
 
 ''' Set up all the algorithms '''
 c.setalg("BasicEventSelection", {"m_name": "BasicEventSelection",
