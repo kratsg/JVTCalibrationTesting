@@ -1,28 +1,34 @@
 #ifndef JVTCalibrationTesting_JVTCalibrationTester_H
 #define JVTCalibrationTesting_JVTCalibrationTester_H
 
-#include <EventLoop/Algorithm.h>
+#include "xAODAnaHelpers/Algorithm.h"
 
-class JVTCalibrationTester : public EL::Algorithm
+// unique pointers
+#include <memory>
+
+// forward-declare
+namespace CP {
+  class JetJvtCalibration;
+}
+
+class JVTCalibrationTester : public xAH::Algorithm
 {
-  // put your configuration variables here as public variables.
-  // that way they can be set directly from CINT and python.
 public:
-  // float cutValue;
+  /** the working point for the JetJvtCalibration tool (Loose, Medium*, Tight). * = Default **/
+  std::string m_workingPoint = "Medium";
+  /** the configuration root file to use for calculating scale factors **/
+  std::string m_sfFile = "JetJvtEfficiency/JvtSFFile.root";
+  /** the input jet collection to use **/
+  std::string m_inContainerName = "AntiKt4EMTopoJets";
 
+private:
+  /** pointer to the JetJvtCalibration tool instance **/
+  // note: should be called CP::JetJvtCalibrationTool instead
+  std::unique_ptr<CP::JetJvtCalibration> m_JetJvtEfficiency; //!
 
-
-  // variables that don't get filled at submission time should be
-  // protected from being send from the submission node to the worker
-  // node (done by the //!)
 public:
-  // Tree *myTree; //!
-  // TH1 *myHist; //!
-
-
-
   // this is a standard constructor
-  JVTCalibrationTester ();
+  JVTCalibrationTester (std::string className = "JVTCalibrationTester");
 
   // these are the functions inherited from Algorithm
   virtual EL::StatusCode setupJob (EL::Job& job);

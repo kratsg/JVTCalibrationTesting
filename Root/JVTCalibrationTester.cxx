@@ -3,130 +3,87 @@
 #include <EventLoop/Worker.h>
 #include <JVTCalibrationTesting/JVTCalibrationTester.h>
 
+// make unique pointers
+#include<CxxUtils/make_unique.h>
+
+// RETURN_CHECK macro
+#include <xAODAnaHelpers/tools/ReturnCheck.h>
+
+// EDM includes
+#include "xAODJet/JetContainer.h"
+
 // this is needed to distribute the algorithm to the workers
 ClassImp(JVTCalibrationTester)
 
 
 
-JVTCalibrationTester :: JVTCalibrationTester ()
-{
-  // Here you put any code for the base initialization of variables,
-  // e.g. initialize all pointers to 0.  Note that you should only put
-  // the most basic initialization here, since this method will be
-  // called on both the submission and the worker node.  Most of your
-  // initialization code will go into histInitialize() and
-  // initialize().
-}
-
-
+JVTCalibrationTester :: JVTCalibrationTester (std::string className) : Algorithm(className) { }
 
 EL::StatusCode JVTCalibrationTester :: setupJob (EL::Job& job)
 {
-  // Here you put code that sets up the job on the submission object
-  // so that it is ready to work with your algorithm, e.g. you can
-  // request the D3PDReader service or add output files.  Any code you
-  // put here could instead also go into the submission script.  The
-  // sole advantage of putting it here is that it gets automatically
-  // activated/deactivated when you add/remove the algorithm from your
-  // job, which may or may not be of value to you.
+  // tell everyone I want to run on xAODs
+  job.useXAOD();
+  xAOD::Init("JVTCalibrationTester").ignore();
   return EL::StatusCode::SUCCESS;
 }
-
-
 
 EL::StatusCode JVTCalibrationTester :: histInitialize ()
 {
-  // Here you do everything that needs to be done at the very
-  // beginning on each worker node, e.g. create histograms and output
-  // trees.  This method gets called before any input files are
-  // connected.
+  // register me with xAODAnaHelpers to keep track of how many of me exist
+  RETURN_CHECK("xAH::Algorithm::algInitialize()", xAH::Algorithm::algInitialize(), "");
   return EL::StatusCode::SUCCESS;
 }
 
-
-
-EL::StatusCode JVTCalibrationTester :: fileExecute ()
-{
-  // Here you do everything that needs to be done exactly once for every
-  // single file, e.g. collect a list of all lumi-blocks processed
-  return EL::StatusCode::SUCCESS;
-}
-
-
-
-EL::StatusCode JVTCalibrationTester :: changeInput (bool firstFile)
-{
-  // Here you do everything you need to do when we change input files,
-  // e.g. resetting branch addresses on trees.  If you are using
-  // D3PDReader or a similar service this method is not needed.
-  return EL::StatusCode::SUCCESS;
-}
-
+EL::StatusCode JVTCalibrationTester :: fileExecute () { return EL::StatusCode::SUCCESS; }
+EL::StatusCode JVTCalibrationTester :: changeInput (bool /*firstFile*/) { return EL::StatusCode::SUCCESS; }
 
 
 EL::StatusCode JVTCalibrationTester :: initialize ()
 {
-  // Here you do everything that you need to do after the first input
-  // file has been connected and before the first event is processed,
-  // e.g. create additional histograms based on which variables are
-  // available in the input files.  You can also create all of your
-  // histograms and trees in here, but be aware that this method
-  // doesn't get called if no events are processed.  So any objects
-  // you create here won't be available in the output if you have no
-  // input events.
+  // grab pointers to TEvent and TStore objects
+  m_event = wk()->xaodEvent();
+  m_store = wk()->xaodStore();
+
+  // set up the JetJvtEfficiency tool
+  if ( asg::ToolStore::contains<CP::JetJvtEfficiency>("JetJvtEfficiency") ) {
+    m_JetJvtEfficiency = asg::ToolStore::get<CP::JetJvtEfficiency>("JetJvtEfficiency");
+  } else {
+    m_JetJvtEfficiency = CxxUtils::make_unique<CP::JetJvtEfficiency>("JetJvtEfficiency");
+  }
+  Info("initialize()", "Attempting to configure tool with:\n\tWorkingPoint\t%s\n\tSFFile\t\t\t%s", m_workingPoint.c_str(), m_sfFile.c_str());
+  RETURN_CHECK("JVTCalibrationTester::initialize()", m_JetJvtEfficiency->setProperty("WorkingPoint",m_workingPoint), "Could not set WorkingPoint.");
+  RETURN_CHECK("JVTCalibrationTester:initialize()", m_JetJvtEfficiency->setProperty("SFFile",m_sfFile), "Could not set SFFile.");
+  RETURN_CHECK("JVTCalibrationTester:initialize()", m_JetJvtEfficiency->initialize(), "Could not initialize the JetJvtEfficiency tool.");
+
   return EL::StatusCode::SUCCESS;
 }
-
-
 
 EL::StatusCode JVTCalibrationTester :: execute ()
 {
-  // Here you do everything that needs to be done on every single
-  // events, e.g. read input variables, apply cuts, and fill
-  // histograms and trees.  This is where most of your actual analysis
-  // code will go.
+  // retrieve input jets
+  const xAOD::JetContainer* jets(nullptr);
+  RETURN_CHECK("JVTCalibrationTester::execute()", HelperFunctions::retrieve(jets, m_inContainerName, m_event, m_store, m_verbose) ,"Could not retrieve input jet collection.");
+
+  // define how we pass JVT
+  auto passJVT = [m_JetJvtEfficiency](const xAOD::Jet* jet) -> bool { return (jet->pt()>60e3 || std::fabs(jet->eta())>2.4 || m_JetJvtEfficiency->passesJvtCut(*jet)); };
+
+  // select jets that pass JVT first
+  ConstDataVector<xAOD::JetContainer> selected_jets = ConstDataVector<xAOD::JetContainer>(SG::VIEW_ELEMENTS);
+  for(const auto& jet: *jets){
+    bool pass = passJVT(jet);
+    if(m_debug) Info("execute()", "%s: Jet with pT %0.2f GeV, eta %0.2f", pass?"PASS":"FAIL", jet->pt()/1e3, std::fabs(jet->eta()));
+    if(pass) selected_jets.push_back(jet);
+  }
+
+  // compute SF for jets that passed JVT
+  for(const auto& jet: selected_jets){
+    float scaleFactor(-999.);
+    m_JetJvtEfficiency->getEfficiencyScaleFactor(*jet,scaleFactor);
+    if(m_debug) Info("execute()", "Jet with pT %0.2f GeV has scale factor %0.2f", jet->pt()/1e3, sf);
+  }
   return EL::StatusCode::SUCCESS;
 }
 
-
-
-EL::StatusCode JVTCalibrationTester :: postExecute ()
-{
-  // Here you do everything that needs to be done after the main event
-  // processing.  This is typically very rare, particularly in user
-  // code.  It is mainly used in implementing the NTupleSvc.
-  return EL::StatusCode::SUCCESS;
-}
-
-
-
-EL::StatusCode JVTCalibrationTester :: finalize ()
-{
-  // This method is the mirror image of initialize(), meaning it gets
-  // called after the last event has been processed on the worker node
-  // and allows you to finish up any objects you created in
-  // initialize() before they are written to disk.  This is actually
-  // fairly rare, since this happens separately for each worker node.
-  // Most of the time you want to do your post-processing on the
-  // submission node after all your histogram outputs have been
-  // merged.  This is different from histFinalize() in that it only
-  // gets called on worker nodes that processed input events.
-  return EL::StatusCode::SUCCESS;
-}
-
-
-
-EL::StatusCode JVTCalibrationTester :: histFinalize ()
-{
-  // This method is the mirror image of histInitialize(), meaning it
-  // gets called after the last event has been processed on the worker
-  // node and allows you to finish up any objects you created in
-  // histInitialize() before they are written to disk.  This is
-  // actually fairly rare, since this happens separately for each
-  // worker node.  Most of the time you want to do your
-  // post-processing on the submission node after all your histogram
-  // outputs have been merged.  This is different from finalize() in
-  // that it gets called on all worker nodes regardless of whether
-  // they processed input events.
-  return EL::StatusCode::SUCCESS;
-}
+EL::StatusCode JVTCalibrationTester :: postExecute () { return EL::StatusCode::SUCCESS; }
+EL::StatusCode JVTCalibrationTester :: finalize () { return EL::StatusCode::SUCCESS; }
+EL::StatusCode JVTCalibrationTester :: histFinalize () { return EL::StatusCode::SUCCESS; }
