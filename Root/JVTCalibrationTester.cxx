@@ -78,7 +78,7 @@ EL::StatusCode JVTCalibrationTester :: execute ()
     m_totalJets++;
     // figure out if we pass or not
     bool pass = passJVT(*jet, *m_JetJvtEfficiency);
-    if(m_debug) Info("execute()", "\t%s: Jet with pT %0.4f GeV, eta %0.4f", pass?"PASS":"FAIL", jet->pt()/1e3, std::fabs(jet->eta()));
+    if(m_debug) Info("execute()", "\t\t%s: Jet with pT %0.4f GeV, eta %0.4f", pass?"PASS":"FAIL", jet->pt()/1e3, std::fabs(jet->eta()));
     if(pass) selected_jets.push_back(jet);
   }
 

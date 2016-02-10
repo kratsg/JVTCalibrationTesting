@@ -25,14 +25,14 @@ private:
   std::unique_ptr<CP::JetJvtEfficiency> m_JetJvtEfficiency; //!
 
   /** number of jets processed in current event **/
-  int m_event_totalJets = 0; //!
+  double m_event_totalJets = 0; //!
   /** number of jets that pass JVT in current event **/
-  int m_event_totalJetsPassed = 0; //!
+  double m_event_totalJetsPassed = 0; //!
 
   /** number of jets processed **/
-  int m_totalJets = 0; //!
+  double m_totalJets = 0; //!
   /** number of jets that pass JVT **/
-  int m_totalJetsPassed = 0; //!
+  double m_totalJetsPassed = 0; //!
 
 public:
   // this is a standard constructor
